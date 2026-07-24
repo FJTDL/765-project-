@@ -1,0 +1,214 @@
+---
+title: "Project"
+author: "Finn de Lange"
+date: "2026-07-23"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(patchwork)
+```
+
+### 
+
+```{r}
+columns <- c(
+  "class", "alcohol", "malic_acid", "ash", "alcalinity_of_ash", 
+  "magnesium", "total_phenols", "flavanoids", "nonflavanoid_phenols", 
+  "proanthocyanins", "color_intensity", "hue", 
+  "od280_od315_of_diluted_wines", "proline"
+)
+
+wine_data <- read.csv("wine.data", header = FALSE, col.names = columns)
+
+# wine_names <- readLines("wine.names")
+# 
+# cat(wine_names, sep = "\n")
+```
+
+```{r fig.width = 9, fig.height = 9}
+colours <- ifelse(wine_data$class == 1, "red",
+                 ifelse(wine_data$class == 2, "blue", "forestgreen"))
+
+pairs(wine_data, col = colours)
+```
+
+```{r}
+wine_data |>
+  ggplot(
+    aes(
+      x = total_phenols,
+      y = flavanoids,
+      col = as.factor(class)
+    )
+  ) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+lm(flavanoids ~ total_phenols * as.factor(class), data = wine_data) |>
+  summary()
+```
+
+```{r}
+wine_data |>
+  ggplot(
+    aes(
+      x = hue,
+      y = color_intensity,
+      col = as.factor(class)
+    )
+  ) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    color = "Class"
+  )
+```
+
+
+```{r}
+wine_data |>
+  ggplot(
+    aes(
+      x = proline,
+      y = od280_od315_of_diluted_wines,
+      col = as.factor(class)
+    )
+  ) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    color = "Class"
+  )
+```
+
+```{r}
+wine_data |>
+  ggplot(
+    aes(
+      x = alcalinity_of_ash,
+      y = magnesium,
+      col = as.factor(class)
+    )
+  ) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    color = "Class"
+  )
+```
+
+
+```{r}
+wine_data |>
+  ggplot(
+    aes(
+      x = proline,
+      y = flavanoids,
+      col = factor(class)
+    )
+  ) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    color = "Class"
+  )
+```
+
+```{r}
+wine_data |>
+  summary()
+```
+
+```{r fig.height = 6, fig.width = 9}
+plot_list <- lapply(setdiff(colnames(wine_data), "class"), function(col_name) ggplot(wine_data, aes(y =as.factor(class), x = .data[[col_name]])) + geom_boxplot() + labs(y = "Cultivar"))
+
+wrap_plots(plot_list)
+```
+
+From this we can see that there appear to be fairly strong differences between the flavanoids of all three classes, as well as the alcohol content. Instead of the plots with separate lines of best fit per group as we've been doing, we can investigate how well these two variables cluster to see how different our groups are.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+wine_data_calc <- wine_data |>
+  group_by(class) |>
+  mutate(
+    dist = mahalanobis(
+      cbind(alcohol, flavanoids),
+      center = colMeans(cbind(alcohol, flavanoids)),
+      cov = cov(cbind(alcohol, flavanoids))
+    ),
+    is_outside = dist > qchisq(0.95, df = 2)
+  ) |>
+  ungroup()
+
+wine_data_calc |>
+  ggplot(
+    aes(
+      x = alcohol,
+      y = flavanoids,
+      color = factor(class)
+    )
+  ) +
+  stat_ellipse(type = "norm", level = 0.95) +
+
+  geom_point(size = 2) +
+
+  geom_point(
+    data = ~ subset(., is_outside == TRUE),
+    shape = 21,     
+    color = "black",
+    fill = NA,      
+    size = 2,       
+    stroke = 1.2
+  ) +
+  labs(color = "Class") +
+  theme_minimal()
+```
+
+This reveals that we have five somewhat unusual data points we may want to look at, as while some of these are still reasonably close to their groups, there are two that are quite far from group 2, their supposed group. We can hunt these down and see if they're truly unusual.
+
+```{r}
+outlier1 <- wine_data |>
+  filter(
+    class == 2,
+    flavanoids > 4
+  ) |>
+  slice(1)
+
+group_rest <- wine_data |>
+  filter(class == 2) |>
+  anti_join(outlier1)
+
+group_ranges <- group_rest |>
+  select(where(is.numeric)) |>
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "value") |>
+  group_by(variable) |>
+  summarise(
+    min_val = min(value, na.rm = TRUE),
+    max_val = max(value, na.rm = TRUE)
+  )
+
+
+outlier_long <- outlier1 |>
+  select(where(is.numeric)) |>
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "outlier_val")
+
+
+comparison <- outlier_long |>
+  left_join(group_ranges, by = "variable") |>
+  mutate(
+    within_range = outlier_val >= min_val & outlier_val <= max_val
+  )
+
+knitr::kable(comparison)
+```
+
