@@ -7,13 +7,15 @@ output:
     code_folding: hide
 ---
 
+data source: https://archive.ics.uci.edu/dataset/109/wine
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(patchwork)
 ```
 
-### 
+### Data read-in
 
 ```{r}
 columns <- c(
@@ -24,10 +26,6 @@ columns <- c(
 )
 
 wine_data <- read.csv("wine.data", header = FALSE, col.names = columns)
-
-# wine_names <- readLines("wine.names")
-# 
-# cat(wine_names, sep = "\n")
 ```
 
 ```{r fig.width = 9, fig.height = 9}
@@ -212,4 +210,16 @@ comparison <- outlier_long |>
 knitr::kable(comparison)
 ```
 
-test 2
+```{r}
+wine_data |>
+  group_split(class) |>
+  map(\(sub_df) lm(alcohol ~ flavanoids, data = sub_df) |> summary())
+```
+
+```{r}
+wine_data |>
+  group_split(class) |>
+  map(\(sub_df) lm(proline ~ color_intensity, data = sub_df) |> summary())
+```
+
+

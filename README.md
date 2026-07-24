@@ -13,7 +13,7 @@ to several food fraud datasets such as the wine quality dataset I have chosen to
 use. 
 
 I grew up in Italy, so I am familiar with the wine culture and production of the 
-area, so it felt right to still have a somewhat personal dataset. This ReadMe 
+area, so it felt right to still have a somewhat personal dataset. This README 
 contains the project proposal submitted for milestone 1.
 
 ## Milestone 1 - Cultivar Prediction
@@ -38,12 +38,18 @@ obvious source of noise will come from human error during experimentation,
 collection, and analysis.
 
 ### Exploration
-- Determine if there is a relationship between phenol-related variables and colour-related variables.
-- Determine which variables are highly co-linear, as they will be problematic for methods such as LDA.
+- Determine if there is a relationship between phenol-related variables and 
+colour-related variables.
+- Determine which variables are highly co-linear, as they will be problematic 
+for methods such as LDA.
 - Which variables provide maximum separation between the groups?
 - Which variables provide minimal separation between the groups?
-- After determining the best separation/prediction rules, can we then determine if some cultivars result in higher alcohol than others, and which variables may be indicative of higher alcohol levels.
-- I’d like to see for curiosity if I can predict the proline levels of a given sample, as proline has a very large range compared to the other variables, and should make for an interesting regression challenge.
+- After determining the best separation/prediction rules, can we then determine 
+if some cultivars result in higher alcohol than others, and which variables may 
+be indicative of higher alcohol levels.
+- I’d like to see for curiosity if I can predict the proline levels of a given 
+sample, as proline has a very large range compared to the other variables, and 
+should make for an interesting regression challenge.
 
 ### Methods
 I already have the data from UCI, and I want to preprocess the data as needed by 
